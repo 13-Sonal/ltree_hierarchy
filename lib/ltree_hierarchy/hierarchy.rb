@@ -22,7 +22,7 @@ module Ltree
         primary_key: ltree_fragment_column,
         optional: true
       }
-
+      belongs_to_parent_opts[:optional] = true if ActiveRecord::VERSION::MAJOR >= 5
       belongs_to :parent, **belongs_to_parent_opts
       validate :prevent_circular_paths, if: :ltree_parent_fragment_changed?
 
