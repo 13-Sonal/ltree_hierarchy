@@ -22,7 +22,6 @@ module Ltree
         primary_key: ltree_fragment_column,
         optional: true
       }
-      belongs_to_parent_opts[:optional] = true if ActiveRecord::VERSION::MAJOR >= 5
       belongs_to :parent, **belongs_to_parent_opts
       validate :prevent_circular_paths, if: :ltree_parent_fragment_changed?
 
@@ -99,17 +98,24 @@ module Ltree
         send("#{ltree_path_column}_was")
       end
 
+      def sanitize_fragment(fragment)
+        fragment.to_s.gsub(/[^A-Za-z0-9_]/, '_')
+      end
+
       def prevent_circular_paths
-        if parent && parent.ltree_path.split(".").include?(ltree_fragment.to_s)
+        safe_fragment = sanitize_fragment(ltree_fragment)
+        if parent && parent.ltree_path.split(".").include?(safe_fragment)
           errors.add(ltree_parent_fragment_column, :invalid)
         end
       end
 
       def compute_path
+        safe_fragment = sanitize_fragment(ltree_fragment)
+
         if parent
-          "#{parent.ltree_path}.#{ltree_fragment}"
+          "#{parent.ltree_path}.#{safe_fragment}"
         else
-          ltree_fragment.to_s
+          safe_fragment
         end
       end
 
